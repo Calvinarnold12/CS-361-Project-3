@@ -1,52 +1,56 @@
 package fa.nfa;
 
+import fa.State;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import fa.State;
-
+/**
+ * Nondeterministic finite automaton implementation.
+ */
 public class NFA implements NFAInterface {
 
     private Set<NFAState> states;
-	private Set<Character> sigma;
-	private Map<NFAState, Map<Character, Set<NFAState>>> delta;
-	private NFAState startState;
-	private Set<NFAState> finalStates;
+    private Set<Character> sigma;
+    private Map<String, NFAState> statesByName;
+    private NFAState startState;
+    private Set<NFAState> finalStates;
 
-    public NFA(){
+    public NFA() {
         states = new LinkedHashSet<>();
-		sigma = new LinkedHashSet<>();
-		delta = new LinkedHashMap<>();
-		startState = null;
-		finalStates = new LinkedHashSet<>();
+        sigma = new LinkedHashSet<>();
+        statesByName = new LinkedHashMap<>();
+        startState = null;
+        finalStates = new LinkedHashSet<>();
     }
 
     @Override
     public boolean addState(String name) {
-        if (name == null) return false;
-		for (NFAState s :states){
-			if(name.equals(s.getName())) return false;
-
-		}
-		NFAState ns = new NFAState(name);
-		boolean isAdded = states.add(ns);
-		if (isAdded) delta.put(ns,ns.getSubDelta());
-		return isAdded;
+        if (name == null || statesByName.containsKey(name)) {
+            return false;
+        }
+        NFAState ns = new NFAState(name);
+        states.add(ns);
+        statesByName.put(name, ns);
+        return true;
     }
 
     @Override
     public boolean setFinal(String name) {
         State s = getState(name);
-		if (s == null) return false;
-		return finalStates.add((NFAState) s);
+        if (s == null) {
+            return false;
+        }
+        return finalStates.add((NFAState) s);
     }
 
     @Override
     public boolean setStart(String name) {
         State s = getState(name);
-        if(s == null){
+        if (s == null) {
             return false;
         }
         startState = (NFAState) s;
@@ -55,14 +59,38 @@ public class NFA implements NFAInterface {
 
     @Override
     public void addSigma(char symbol) {
+        if (symbol == 'e') {
+            return;
+        }
         sigma.add(symbol);
-        return;
     }
 
     @Override
     public boolean accepts(String s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'accepts'");
+        if (s == null || startState == null) {
+            return false;
+        }
+
+        Set<NFAState> current = eClosure(startState);
+        for (char symbol : s.toCharArray()) {
+            Set<NFAState> next = new LinkedHashSet<>();
+            for (NFAState state : current) {
+                next.addAll(getToState(state, symbol));
+            }
+
+            Set<NFAState> withClosure = new LinkedHashSet<>();
+            for (NFAState state : next) {
+                withClosure.addAll(eClosure(state));
+            }
+            current = withClosure;
+        }
+
+        for (NFAState state : current) {
+            if (finalStates.contains(state)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -71,89 +99,133 @@ public class NFA implements NFAInterface {
     }
 
     @Override
-    public State getState(String name) {
-        if (name == null) return null; //if name provided empty, return null
-		for (NFAState s: states){
-			if (name.equals(s.getName())) return s; // return found state
-
-		}
-		return null; // if no matching state found
+    public NFAState getState(String name) {
+        if (name == null) {
+            return null;
+        }
+        return statesByName.get(name);
     }
 
     @Override
     public boolean isFinal(String name) {
-        for(NFAState s: finalStates){
-            if(name.equals(s.getName())){
-                return true;
-            }
-        }
-        return false;
+        State s = getState(name);
+        return s != null && finalStates.contains((NFAState) s);
     }
 
     @Override
     public boolean isStart(String name) {
-        if(name.equals(startState.getName())){
-            return true;
+        if (name == null || startState == null) {
+            return false;
         }
-        return false;
+        return name.equals(startState.getName());
     }
 
     @Override
     public Set<NFAState> getToState(NFAState from, char onSymb) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getToState'");
+        if (from == null) {
+            return Set.of();
+        }
+        return from.toStates(onSymb);
     }
 
     @Override
     public Set<NFAState> eClosure(NFAState s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'eClosure'");
+        Set<NFAState> closure = new LinkedHashSet<>();
+        if (s == null) {
+            return closure;
+        }
+
+        // DFS with explicit stack as required by the project specs.
+        Deque<NFAState> stack = new ArrayDeque<>();
+        stack.push(s);
+        closure.add(s);
+
+        while (!stack.isEmpty()) {
+            NFAState current = stack.pop();
+            for (NFAState next : current.toStates('e')) {
+                if (!closure.contains(next)) {
+                    closure.add(next);
+                    stack.push(next);
+                }
+            }
+        }
+
+        return closure;
     }
 
     @Override
     public int maxCopies(String s) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'maxCopies'");
+        if (startState == null) {
+            return 0;
+        }
+        if (s == null) {
+            return eClosure(startState).size();
+        }
+
+        Set<NFAState> current = eClosure(startState);
+        int max = current.size();
+
+        for (char symbol : s.toCharArray()) {
+            Set<NFAState> next = new LinkedHashSet<>();
+            for (NFAState state : current) {
+                next.addAll(getToState(state, symbol));
+            }
+
+            Set<NFAState> withClosure = new LinkedHashSet<>();
+            for (NFAState state : next) {
+                withClosure.addAll(eClosure(state));
+            }
+            current = withClosure;
+
+            if (current.size() > max) {
+                max = current.size();
+            }
+        }
+
+        return max;
     }
 
     @Override
     public boolean addTransition(String fromState, Set<String> toStates, char onSymb) {
-        //Get the states
+        if (fromState == null || toStates == null) {
+            return false;
+        }
+
+        // Epsilon transitions are marked by reserved character 'e'.
+        if (onSymb != 'e' && !sigma.contains(onSymb)) {
+            return false;
+        }
+
         State from = getState(fromState);
+        if (from == null) {
+            return false;
+        }
 
         Set<NFAState> to = new LinkedHashSet<>();
-
-        for(String s: toStates){
-            State state = getState(s);
+        for (String label : toStates) {
+            State state = getState(label);
+            if (state == null) {
+                return false;
+            }
             to.add((NFAState) state);
         }
 
-        //Check if states exist
-        if(to == null || from == null){
-            return false;
-        }
-
-        //check if symbol is a part of sigma
-        if(!sigma.contains(onSymb)){
-            return false;
-        }
-
-        
-        //I don't think this is needed? 
-		if (delta.get(from) == null) return false; 
-
-        //add to nfastate map
-        NFAState fromNFA = (NFAState) from;
-        fromNFA.addSubDelta(onSymb, to);
-
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'addTransition'");
+        ((NFAState) from).addSubDelta(onSymb, to);
+        return true;
     }
 
     @Override
     public boolean isDFA() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'isDFA'");
+        for (NFAState state : states) {
+            if (!state.toStates('e').isEmpty()) {
+                return false;
+            }
+            for (char symbol : sigma) {
+                if (state.toStates(symbol).size() != 1) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
-    
 }
