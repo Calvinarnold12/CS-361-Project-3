@@ -64,6 +64,8 @@ The most challenging parts of the project were the graph-based algorithms and ma
 
 Calvin: The hardest part for me was making sure the transition structure really behaved like an NFA instead of a DFA. With DFAs it is easy to think in terms of one current state, but here I had to think in terms of sets of active states and remember that epsilon transitions can expand those sets even when no input symbol is consumed. What finally clicked was treating the current configuration as a set of copies and updating that set in phases.
 
+Audrey: Things started out pretty nicely with this project, since a lot of the methods worked similarly to those in the DFA project. Being able to reference that code saved a lot of time, which was super helpful when we reached the methods specific to NFAs. Those required a lot of thought and a lot of patience. One of the biggest hurdles for me was trying to figure out the addTransition method. In the DFA project, all the transitions were kept in a map in the NFA class, but the this project recommended each NFAState object store its own transitions. And for some reason, I just had the hardest time wrapping my head around why we would need to do it one way versus the other and how to store the transitions in general. It took looking up how hashmaps work again and actually drawing out an NFA transition table to finally put two and two together. Also, not that this is an actual issue, but naming variables and methods was a challenge. Whenever I look back through the code, it's like "Oh geez, I did name it like that."
+
 EXTRA CREDIT:
 No extra credit was attempted.
 
