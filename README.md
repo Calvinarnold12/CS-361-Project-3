@@ -54,15 +54,10 @@ The provided tests exercise three different NFAs and include both accepted and r
 The program handles several kinds of bad input defensively. For example, it rejects transitions when the source or destination state does not exist, rejects non-epsilon transition symbols that are not in the alphabet, rejects duplicate state names, and returns false if acceptance is attempted without a valid start state. Based on the provided test suite, no known functional bugs remain, although hidden tests may still reveal edge cases not covered by the supplied examples.
 
 DISCUSSION:
-One issue during development was making sure the implementation matched both the interfaces and the test expectations. In particular, the tests expect getState to return an NFAState object that can be used directly in methods such as eClosure and toStates, so the implementation uses a covariant return type.
-
-Another important issue was handling epsilon transitions correctly. The reserved character 'e' is used to mark epsilon transitions and should not be treated like a regular alphabet symbol. That distinction affects both addTransition and the traversal logic in eClosure, accepts, and maxCopies.
-
-It was also necessary to ensure that transitions on the same symbol were merged rather than overwritten. If transitions were overwritten, the automaton would lose valid nondeterministic branches and fail acceptance or maxCopies tests.
-
-The most challenging parts of the project were the graph-based algorithms and making sure the simulation matched NFA behavior exactly. The design became much clearer once epsilon-closure and active-state tracking were treated as separate steps: first compute transitions on the current symbol, then expand through epsilon transitions.
-
-Calvin: The hardest part for me was making sure the transition structure really behaved like an NFA instead of a DFA. With DFAs it is easy to think in terms of one current state, but here I had to think in terms of sets of active states and remember that epsilon transitions can expand those sets even when no input symbol is consumed. What finally clicked was treating the current configuration as a set of copies and updating that set in phases.
+Calvin: We decided for this project to use our project 2 code as a starting point. We made a new tm project directory file, and planned to make 3 new classes. 
+    TMSimulator.java: This is the main class that is meant to parse the input file, initialize the TM, run the simulation and print the tape output 
+    TM.java: This is our Core TM  class to manage states, transitions, tape, and simulation logic  
+    TMState.java: Represents a TM state as the turing machine states will need to store more data than or NFA state
 
 Audrey: Things started out pretty nicely with this project, since a lot of the methods worked similarly to those in the DFA project. Being able to reference that code saved a lot of time, which was super helpful when we reached the methods specific to NFAs. Those required a lot of thought and a lot of patience. One of the biggest hurdles for me was trying to figure out the addTransition method. In the DFA project, all the transitions were kept in a map in the NFA class, but the this project recommended each NFAState object store its own transitions. And for some reason, I just had the hardest time wrapping my head around why we would need to do it one way versus the other and how to store the transitions in general. It took looking up how hashmaps work again and actually drawing out an NFA transition table to finally put two and two together. Also, not that this is an actual issue, but naming variables and methods was a challenge. Whenever I look back through the code, it's like "Oh geez, I did name it like that."
 
