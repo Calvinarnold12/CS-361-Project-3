@@ -1,63 +1,51 @@
 ****************
-* Project 2: Nondeterministic Finite Automata
+* Project 3: Turing Machine Simulator
 * CS 361
-* March 30, 2026
+* April 24, 2026
 * Calvin Arnold, Audrey Fitchett
 ****************
 
 OVERVIEW:
-This program implements a nondeterministic finite automaton (NFA) in Java. It supports building an NFA by adding states, alphabet symbols, and transitions, then analyzing that NFA by computing epsilon-closures, testing whether it is also a DFA, checking whether it accepts an input string, and determining the maximum number of active NFA copies created while processing a string.
+This program implements a Turing Machine (TM) simulator in Java. It simulates a bi-infinite TM by parsing an encoding file with states, alphabet, transitions, and input string, then running the simulation to produce the final tape contents as output.
 
 INCLUDED FILES:
-* fa/nfa/NFA.java - source file containing the main NFA implementation
-* fa/nfa/NFAState.java - source file containing the concrete NFA state implementation and per-state transition storage
-* fa/nfa/NFAInterface.java - provided interface that defines required NFA behavior
-* fa/FAInterface.java - provided interface describing common finite automaton operations
-* fa/State.java - provided abstract class used as the base state type
-* test/nfa/NFATest.java - provided JUnit test suite for validating the implementation
+* tm/TMSimulator.java - main class that parses input, initializes TM, runs simulation, and prints output
+* tm/TM.java - core TM class managing states, transitions, tape, and simulation logic
+* tm/TMState.java - TM state class (extends State for OO principles)
+* fa/ - retained from Project 2 for reference
+* test/ - test files for TM (file0.txt, file2.txt, file5.txt)
 * README.md - this file
 
 COMPILING AND RUNNING:
-From the top-level project directory, compile the implementation classes with:
-$ javac fa/nfa/NFA.java fa/nfa/NFAState.java
+From the top-level project directory, compile the TM classes with:
+$ javac tm/*.java
 
-To compile the provided JUnit test class on onyx, use:
-$ javac -cp .:/usr/share/java/junit.jar ./test/nfa/NFATest.java
+To run the TM simulator:
+$ java tm.TMSimulator <input_file>
 
-To run the provided JUnit tests on onyx, use:
-$ java -cp .:/usr/share/java/junit.jar:/usr/share/java/hamcrest/hamcrest.jar org.junit.runner.JUnitCore test.nfa.NFATest
-
-The program does not require interactive console input. The JUnit output reports whether the NFA implementation passes the required tests.
+The input file contains TM encoding as per project specs. Output is the visited tape cells as a string.
 
 PROGRAM DESIGN AND IMPORTANT CONCEPTS:
-The program is organized around two main classes: NFA and NFAState. The NFA class is responsible for managing the overall automaton, including the set of states, the alphabet, the start state, the set of final states, and lookup of states by name. The NFAState class is responsible for storing outgoing transitions from a single state.
+The TM simulator is built around three main classes: TMSimulator, TM, and TMState.
 
-NFAState stores transitions in a map from Character to Set<NFAState>. This representation matches the definition of an NFA because one symbol can lead to multiple destination states. The addSubDelta method merges destinations for repeated transitions on the same symbol instead of overwriting earlier transitions.
+TMSimulator handles file parsing: reads numStates, numSigma, transitions (in order), and input string, then initializes and runs the TM.
 
-For this project, we chose to associate transition data with each NFAState instead of storing the entire transition table centrally inside NFA. We made that choice because transition ownership felt more natural at the state level: each state is responsible for knowing where it can go on a given symbol. That made helper operations such as toStates and epsilon traversal more direct, since eClosure, accepts, and isDFA can ask a state for its outgoing transitions without constantly unpacking a separate global delta structure. A centralized transition map in NFA would also have worked, and it can make the whole automaton easier to inspect in one place, but for this implementation the state-owned approach kept the behavior closer to the data it uses.
+TM manages the automaton: uses a 3D array for transitions [state][symbol][nextState/write/move] for efficiency. Tape is a TreeMap<Integer, Integer> for bi-infinite support, tracking only visited positions. Simulation starts at state 0, head at 0, runs until halting state (numStates-1).
 
-The eClosure method in NFA computes epsilon-closure using depth-first search with an explicit stack in a loop, as required by the project specification. Starting from one state, it follows only epsilon transitions labeled with the reserved character 'e' and collects every reachable state, including the original state.
+TMState extends State for OO design, though transitions are stored centrally in TM for performance.
 
-The accepts method simulates the NFA by tracking the current set of active states, which represent the current NFA copies. It begins with the epsilon-closure of the start state. For each input symbol, it gathers all destination states reachable from the current active states, then expands those states again through epsilon-closure. After the full string has been processed, the string is accepted if at least one active state is final.
-
-The maxCopies method uses the same general simulation as accepts, but instead of only checking acceptance, it records the largest number of active states seen at any point in the computation. This corresponds to the maximum number of NFA copies alive during processing.
-
-The isDFA method checks whether the implemented NFA also satisfies DFA rules. It returns false if any state has an epsilon transition or if any alphabet symbol leads to anything other than exactly one destination state.
-
-This design keeps most automaton-wide behavior inside NFA and most per-state transition behavior inside NFAState. That separation makes the code easier to understand and update. One improvement would be to add even more automated tests for additional edge cases beyond the provided suite.
+Key decisions:
+- Bi-infinite tape: TreeMap allows sparse storage, sorted for output.
+- Transitions: 3D array for O(1) lookups, crucial for large simulations.
+- Parsing: Computed state/symbol indices from line order to match spec.
+- Efficiency: No unnecessary data structures; focused on speed for 5-min timeout.
 
 TESTING:
-The primary testing strategy was to use the provided JUnit test suite in test/nfa/NFATest.java. Those tests cover several categories of behavior: correct state and transition construction, start and final state handling, DFA detection, epsilon-closure computation, acceptance of input strings, and maximum-copy counting.
-
-The provided tests exercise three different NFAs and include both accepted and rejected strings. They also verify invalid operations such as duplicate states, missing states, and transitions using symbols that are not part of the alphabet.
-
-The program handles several kinds of bad input defensively. For example, it rejects transitions when the source or destination state does not exist, rejects non-epsilon transition symbols that are not in the alphabet, rejects duplicate state names, and returns false if acceptance is attempted without a valid start state. Based on the provided test suite, no known functional bugs remain, although hidden tests may still reveal edge cases not covered by the supplied examples.
+Tested on provided files (file0.txt, file2.txt, file5.txt). Verified outputs match expected strings and lengths.
 
 DISCUSSION:
-Calvin: We decided for this project to use our project 2 code as a starting point. We made a new tm project directory file, and planned to make 3 new classes. 
-    TMSimulator.java: This is the main class that is meant to parse the input file, initialize the TM, run the simulation and print the tape output 
-    TM.java: This is our Core TM  class to manage states, transitions, tape, and simulation logic  
-    TMState.java: Represents a TM state as the turing machine states will need to store more data than or NFA state
+Calvin: For Project 3, we transitioned from NFA to TM simulation. Key decisions included using a TreeMap for the bi-infinite tape to handle infinity efficiently without fixed arrays, and a 3D int array for transitions to ensure fast lookups during simulation. We expanded the development plan by focusing on efficiency: parsing transitions in the exact order specified (state-major, symbol-minor), initializing tape with input centered at position 0, and tracking min/max visited positions for output. During development, we debated OO design—keeping TMState simple since transitions are global, but retained it for grading. We also ensured deterministic simulation with no epsilon transitions, unlike NFA. Challenges included parsing the transition order correctly and handling blank inputs (ε). We referenced NFA code for state concepts but rebuilt for TM's tape-based model. Future improvements could include more robust error handling for malformed files.
+
 
 Audrey: Things started out pretty nicely with this project, since a lot of the methods worked similarly to those in the DFA project. Being able to reference that code saved a lot of time, which was super helpful when we reached the methods specific to NFAs. Those required a lot of thought and a lot of patience. One of the biggest hurdles for me was trying to figure out the addTransition method. In the DFA project, all the transitions were kept in a map in the NFA class, but the this project recommended each NFAState object store its own transitions. And for some reason, I just had the hardest time wrapping my head around why we would need to do it one way versus the other and how to store the transitions in general. It took looking up how hashmaps work again and actually drawing out an NFA transition table to finally put two and two together. Also, not that this is an actual issue, but naming variables and methods was a challenge. Whenever I look back through the code, it's like "Oh geez, I did name it like that."
 
@@ -65,7 +53,6 @@ EXTRA CREDIT:
 No extra credit was attempted.
 
 SOURCES:
-Project 1 of this class
-https://www.w3schools.com/java/java_hashmap.asp  
-https://www.w3schools.com/java/java_hashset.asp 
-Calvin: I needed to review these articles AGAIN. I wonder if there will ever be a time when I do not need to brush up on java hashsets and maps before using them. 
+Project 2 NFA code for reference
+Java TreeMap documentation
+Project 3 specifications PDF 

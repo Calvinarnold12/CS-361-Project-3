@@ -4,70 +4,67 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
-public class TMSimulator{
+public class TMSimulator {
 
-    //Development plan: This class will parse input file, 
-    // Initialize the TM, run the simulation and print the 
-    // tape as output
+    // Development plan: Parse input file, initialize TM, run simulation, print tape output
 
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            System.err.println("Usage: java tm.TMSimulator <input_file>");
+            return;
+        }
 
-    //Initialize TM
+        String filename = args[0];
+        try {
+            Scanner scnr = new Scanner(new File(filename));
 
+            // First line: number of states
+            int numStates = Integer.parseInt(scnr.nextLine().trim());
 
-    //Run sim
+            // Second line: number of symbols in Σ (m)
+            int numSigma = Integer.parseInt(scnr.nextLine().trim());
 
+            // Create TM
+            TM tm = new TM(numStates, numSigma);
 
-    //return tape as output
-    public static void main(String[] args){
-        //declare variables
-        int numStates = 0;
-        int numChar = 0;
-        TM tim = new TM();
+            // Next |Γ| * (numStates - 1) lines: transitions
+            // |Γ| = numSigma + 1 (0 for blank, 1 to numSigma)
+            int numTransitions = (numSigma + 1) * (numStates - 1);
+            for (int i = 0; i < numTransitions; i++) {
+                String line = scnr.nextLine().trim();
+                String[] parts = line.split(",");
+                int nextState = Integer.parseInt(parts[0]);
+                int writeSymbol = Integer.parseInt(parts[1]);
+                int move = parts[2].equals("L") ? 0 : 1; // 0=L, 1=R
 
-        //initialize empty TM
+                // Compute state and symbol from index
+                int state = i / (numSigma + 1);
+                int symbol = i % (numSigma + 1);
 
-        //parse file
-        File file = new File(args[0]);
-        try{
-            Scanner scnr = new Scanner(file);
-
-            //first line: number of states
-            numStates = scnr.nextInt();
-
-            //second line: alphabet
-            numChar = scnr.nextInt();
-            int car = numChar * (numStates - 1);
-
-            for(int i = 1; i < numChar + 1; i++){
-                tim.addSigma((char) i);
+                tm.addTransition(state, symbol, nextState, writeSymbol, move);
             }
 
-            for(int i = 0; i < car; i++){
-                if(i % car == 0){
-                    int curr = i / car;
-                    TMState currentState = new TMState(String.valueOf(curr));
-                    //add transition
-                }
-                else{
-                    //add transition
-                }
+            // Last line: input string (or blank for ε)
+            String input = "";
+            if (scnr.hasNextLine()) {
+                input = scnr.nextLine().trim();
             }
-            //lines 3 - (|Q|x|T| - 1): transitions
-            // each state gets |T| transitions, starting with 0 
-            // idr exactly how it works, but I think in each |T| grouping,
-            // T1 will be reading a blank, T2 will be reading a 1, and so on
-            // this can probably be accomplished with a while loop and some
-            // if else statements that use modulo? 
 
-            //last line (if it exists): starting string
+            // Initialize tape with input
+            tm.initializeTape(input);
 
-            //so many thoughts
+            // Run the TM
+            tm.runTM();
+
+            // Print the tape output
+            System.out.println(tm.getTapeOutput());
 
             scnr.close();
 
-        }
-        catch(FileNotFoundException e){
-
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + filename);
+        } catch (Exception e) {
+            System.err.println("Error parsing file: " + e.getMessage());
         }
     }
 }
