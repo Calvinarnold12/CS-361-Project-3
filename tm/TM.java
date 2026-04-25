@@ -8,7 +8,6 @@ public class TM {
 
     // Declare variables
     private int numStates;
-    private int numSigma; // m, symbols 1 to m, tape has 0 (blank) + 1 to m
     private int[][][] transitions; // [state][symbol][0=nextState, 1=writeSymbol, 2=move(0=L,1=R)]
     private TreeMap<Integer, Integer> tape; // position -> symbol, sorted for output
     private int currentState;
@@ -18,7 +17,6 @@ public class TM {
 
     public TM(int numStates, int numSigma) {
         this.numStates = numStates;
-        this.numSigma = numSigma;
         this.transitions = new int[numStates][numSigma + 1][3]; // symbols 0 to m
         this.tape = new TreeMap<>();
         this.currentState = 0; // start state
