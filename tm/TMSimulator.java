@@ -1,5 +1,3 @@
-package tm;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
@@ -10,7 +8,7 @@ public class TMSimulator {
 
     public static void main(String[] args) {
         if (args.length != 1) {
-            System.err.println("Usage: java tm.TMSimulator <input_file>");
+            System.err.println("Usage: java TMSimulator <input_file>");
             return;
         }
 

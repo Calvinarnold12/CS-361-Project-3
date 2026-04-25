@@ -1,5 +1,4 @@
 //TODO: I don't know if this file is supposed to live in this folder
-package tm;
 
 public abstract class State {
 	/**
